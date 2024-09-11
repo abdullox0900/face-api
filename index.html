@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yuz aniqlash</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            position: absolute;
+        }
+    </style>
+
+</head>
+
+<body>
+    <video id="video" width="640" height="480" autoplay muted></video>
+    <img id="referenceImage1" src="./public/abdulloh.jpg" style="display:none;" />
+    <img id="referenceImage2" src="./public/boburjon-aka.jpg" style="display:none;" />
+    <img id="referenceImage3" src="./public/boburjon-aka.jpg" style="display:none;" />
+    <script src="app.js"></script>
+</body>
+
+</html>
