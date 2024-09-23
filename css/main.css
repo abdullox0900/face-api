@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    font-family: "Roboto", system-ui;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* background-image: url('../public/img/bg.jpg'); */
+    background-color: black;
+    background-size: cover;
+}
+
+canvas {
+    position: absolute;
+    left: 0;
+    /* transform: scaleX(-1); */
+    top: 0;
+}
+
+.big-logo {
+    position: absolute;
+    top: -30%;
+    left: 12%;
+    width: 500px;
+
+}
+
+#wrapper {
+    position: relative;
+    border-radius: 10px;
+    border: 10px solid #00a0ea;
+}
+
+#video {
+    transform: scaleX(-1);
+}
+
+#status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 100px;
+    padding: 10px;
+    width: 400px;
+    height: 500px;
+    border: 10px solid #00a0ea;
+    background-color: black;
+    border-radius: 5px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.home-button {
+    position: fixed;
+    left: 2%;
+    top: 2%;
+    width: 30px;
+    height: 30px;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+.success {
+    /* background-color: green; */
+    color: white;
+}
+
+.failure {
+    /* background-color: red; */
+    color: white;
+}
+
+.wrap-active {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    color: black;
+    font-size: 35px;
+}
+
+.wrap-active img {
+    width: 300px;
+    height: 300px;
+}
+
+.wrap-result {
+    text-align: center;
+}
+
+.wrap-result img {
+    width: 300px;
+    height: 300px;
+    margin-bottom: 15px;
+}
+
+.success-user {
+    color: green;
+    font-size: 30px;
+    text-align: center;
+}
+
+.warning-user {
+    color: #E2AC1D;
+    font-size: 30px;
+    text-align: center;
+}

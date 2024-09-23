@@ -4,33 +4,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yuz aniqlash</title>
+    <link rel="stylesheet" href="./css/main.css">
+    <title>Alpomish camera</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        canvas {
-            position: absolute;
-        }
-    </style>
-
+    <script src="./js/app.js"></script>
 </head>
 
 <body>
-    <video id="video" width="640" height="480" autoplay muted></video>
-    <img id="referenceImage1" src="./public/abdulloh.jpg" style="display:none;" />
-    <img id="referenceImage2" src="./public/boburjon-aka.jpg" style="display:none;" />
-    <img id="referenceImage3" src="./public/boburjon-aka.jpg" style="display:none;" />
-    <script src="app.js"></script>
+
+    <button class="home-button">
+        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0,0,256,256">
+            <g fill="#ffffff" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt"
+                stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0"
+                font-family="none" font-weight="none" font-size="none" text-anchor="none"
+                style="mix-blend-mode: normal">
+                <g transform="scale(10.66667,10.66667)">
+                    <path
+                        d="M12,2.09961l-11,9.90039h3v9h7v-6h2v6h7v-9h3zM12,4.79102l6,5.40039v0.80859v8h-3v-6h-6v6h-3v-8.80859z">
+                    </path>
+                </g>
+            </g>
+        </svg>
+    </button>
+
+    <div id="wrapper">
+        <img class="big-logo" src="./public/img/alpomish-logo.svg" alt="">
+
+        <video id="video" width="640" height="480" autoplay muted></video>
+    </div>
+
+    <div id="status">
+        <!-- <div class="wrap-active">
+            <img src="./public/img/active-img.png" alt="" width="700" height="800">
+            <div>Kamera activ</div>
+        </div> -->
+    </div>
+
+    <audio id="successAudio">
+        <source src="./public/audio/success.m4a" type="audio/mpeg">
+    </audio>
+    <audio id="warningAudio">
+        <source src="./public/audio/warning.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="errorAudio">
+        <source src="./public/audio/error.m4a" type="audio/mpeg">
+    </audio>
+
 </body>
 
 </html>
