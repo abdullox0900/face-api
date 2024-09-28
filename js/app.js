@@ -1,13 +1,15 @@
 const MODEL_URL = './models'
-const API_URL = "https://alpomish-fitness.uz/"
+const API_URL = "http://192.168.100.12:8000/"
 let faceMatcher = null
 let userDataMap = new Map()
 let successAudio, errorAudio, warningAudio
 let detectionBox = null
 let faceInBoxStartTime = null
-const FACE_DETECTION_DURATION = 1000  // 2 sekund
+const FACE_DETECTION_DURATION = 1000  // 1 sekund
 
-const MIN_FACE_SIZE = 100 // Minimal yuz o'lchami (pikselda)
+const MIN_FACE_SIZE = 60 // Minimal yuz o'lchami (pikselda)
+const MAX_FACE_SIZE = 250 // Maksimal yuz o'lchami
+const OPTIMAL_FACE_SIZE = 100 // Optimal yuz o'lchami
 let currentCameraIndex = 0 // Joriy kamera indeksi
 let availableCameras = [] // Mavjud kameralar ro'yxati
 
@@ -34,29 +36,24 @@ function updateUI(status, message) {
 
     console.log(status)
 
-
     if (status == 1) {
         statusElement.innerHTML = `
             <div class="wrap-result">
                 <img src="./public/img/success.svg" alt="Success" width="300" height="300">
-                
                 <div class="success-user">${message}</div>
             </div>
         `
-
     } else if (status == 2) {
         statusElement.innerHTML = `
         <div class="wrap-result">
             <img src="./public/img/success.svg" alt="Success" width="300" height="300">
-            
             <div class="success-user">${message}</div>
         </div>
     `
     } else if (status == 3) {
         statusElement.innerHTML = `
         <div class="wrap-result">
-            <img src="./public/img/warning.svg" alt="Success" width="300" height="300">
-            
+            <img src="./public/img/warning.svg" alt="Warning" width="300" height="300">
             <div class="warning-user">${message}</div>
         </div>
     `
@@ -71,22 +68,20 @@ function updateUI(status, message) {
     playAudio(status)
 
     setTimeout(() => {
-        statusElement.innerHTML = `
-
-        `
+        statusElement.innerHTML = ''
         statusElement.className = ''
     }, 10000)
 }
 
 async function loadModels() {
-    console.log('Modellar yuklanmoqda...')
+    console.log('🚀 Modellar yuklanmoqda...')
     try {
         await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL)
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-        console.log('Barcha modellar muvaffaqiyatli yuklandi')
+        console.log('✅ Barcha modellar muvaffaqiyatli yuklandi')
     } catch (err) {
-        console.error('Modellarni yuklashda xatolik:', err)
+        console.error('❌ Modellarni yuklashda xatolik:', err)
         throw err
     }
 }
@@ -98,7 +93,7 @@ async function fetchReferenceData() {
             throw new Error(`HTTP error! status: ${response.status}`)
         }
         const data = await response.json()
-        console.log('API dan olingan ma\'lumotlar:', data)
+        console.log('📊 API dan olingan ma\'lumotlar:', data)
 
         data.forEach(user => {
             if (user.avatar && typeof user.avatar === 'string') {
@@ -111,13 +106,13 @@ async function fetchReferenceData() {
 
         return data
     } catch (err) {
-        console.error('API dan ma\'lumot olishda xatolik:', err)
+        console.error('❌ API dan ma\'lumot olishda xatolik:', err)
         return []
     }
 }
 
 async function loadReferenceImages() {
-    console.log('Reference rasmlar yuklanmoqda...')
+    console.log('🚀 Reference rasmlar yuklanmoqda...')
     try {
         const referenceData = await fetchReferenceData()
         if (referenceData.length === 0) {
@@ -144,7 +139,7 @@ async function loadReferenceImages() {
         }
 
         faceMatcher = new faceapi.FaceMatcher(validDescriptors)
-        console.log('Reference rasmlar muvaffaqiyatli yuklandi va FaceMatcher yaratildi')
+        console.log('✅ Reference rasmlar muvaffaqiyatli yuklandi va FaceMatcher yaratildi')
     } catch (err) {
         console.error('Reference rasmlarni yuklashda xatolik:', err)
     }
@@ -203,7 +198,7 @@ async function postDetectedPerson(code) {
     console.log('Yuborilayotgan kod:', code)
 
     try {
-        const response = await fetch('https://alpomish-fitness.uz/api/create-attendance/', {
+        const response = await fetch('http://192.168.100.12:8000/api/create-attendance/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -225,23 +220,121 @@ async function postDetectedPerson(code) {
     }
 }
 
-const MATCH_THRESHOLD = 0.7 // 70% o'xshashlik yetarli
-const CONSECUTIVE_MATCHES_REQUIRED = 10 // Ketma-ket 10 ta mos kelish
-const MATCH_INTERVAL = 200 // Har 200 ms da tekshirish
-const FACE_RECOGNITION_PROBABILITY_THRESHOLD = 0.8 // 80% yuz aniqlash ehtimolligi
-const DESCRIPTOR_HISTORY_LENGTH = 10 // So'nggi 10 ta deskriptorni saqlash
+const MATCH_THRESHOLD = 0.4 // 60% o'xshashlik yetarli (bu qiymatni yanada kamaytiramiz)
+const CONSECUTIVE_MATCHES_REQUIRED = 10 // Ketma-ket 10 ta mos kelish (oshiramiz)
+const MATCH_INTERVAL = 100 // Har 100 ms da tekshirish (tezroq tekshirish)
+const FACE_RECOGNITION_PROBABILITY_THRESHOLD = 0.9 // 90% yuz aniqlash ehtimolligi (oshiramiz)
+const DESCRIPTOR_HISTORY_LENGTH = 15 // So'nggi 15 ta deskriptorni saqlash
 const POST_COOLDOWN = 2 * 60 * 60 * 1000 // 2 soat
 const ERROR_INTERVAL = 10000 // 10 sekund
-const PROCESS_INTERVAL = 500 // Har 500 ms da kaderni qayta ishlash
+const PROCESS_INTERVAL = 200 // Har 500 ms da kaderni qayta ishlash
+const FACE_RECOGNITION_INTERVAL = 200 // Har 500 ms da yuz tanish
 
 let consecutiveMatches = {}
 let lastMatchTimes = {}
 let faceDescriptors = {}
 let lastSuccessfulPostTimes = {}
 let lastErrorTime = 0
+let lastRecognitionTime = 0
 
 function isUserInDatabase(label) {
     return userDataMap.has(label) && userDataMap.get(label).code !== 'API_YOQ'
+}
+
+function calculateAverageDescriptor(descriptors) {
+    const sum = descriptors.reduce((acc, curr) => acc.map((val, i) => val + curr[i]), new Array(128).fill(0))
+    return sum.map(val => val / descriptors.length)
+}
+
+function calculateDescriptorDistance(desc1, desc2) {
+    return faceapi.euclideanDistance(desc1, desc2)
+}
+
+function calculateFaceQualityScore(landmarks) {
+    const leftEye = landmarks.getLeftEye()
+    const rightEye = landmarks.getRightEye()
+    const nose = landmarks.getNose()
+    const mouth = landmarks.getMouth()
+
+    const eyeDistance = faceapi.euclideanDistance(leftEye[0], rightEye[3])
+    const faceWidth = faceapi.euclideanDistance(leftEye[0], rightEye[3])
+    const faceHeight = faceapi.euclideanDistance(nose[3], mouth[3])
+
+    const symmetryScore = Math.abs(eyeDistance / faceWidth - 0.5)
+    const aspectRatioScore = faceHeight / faceWidth
+
+    return (1 - symmetryScore) * aspectRatioScore
+}
+
+function getFacePositionMessage(face, detectionBox) {
+    if (face.width < MIN_FACE_SIZE || face.height < MIN_FACE_SIZE) {
+        return "Iltimos, kameraga yaqinroq keling"
+    }
+    if (face.width > MAX_FACE_SIZE || face.height > MAX_FACE_SIZE) {
+        return "Iltimos, kameradan uzoqlashing"
+    }
+    if (!isFullyInsideBox(face, detectionBox)) {
+        return "Iltimos, yuzingizni kvadrat ichiga joylashtiring"
+    }
+    return null
+}
+
+async function refreshReferenceData() {
+    try {
+        const newReferenceData = await fetchReferenceData()
+        if (newReferenceData.length === 0) {
+            console.warn('Yangi reference ma\'lumotlar topilmadi')
+            return
+        }
+
+        let hasChanges = false
+
+        for (const newUser of newReferenceData) {
+            const existingUser = userDataMap.get(newUser.first_name)
+            if (!existingUser || existingUser.avatar !== newUser.avatar) {
+                hasChanges = true
+                break
+            }
+        }
+
+        if (!hasChanges) {
+            console.log('Yangi o\'zgarishlar topilmadi')
+            return
+        }
+
+        console.log('Yangi o\'zgarishlar aniqlandi, FaceMatcher yangilanmoqda...')
+
+        const labeledDescriptors = await Promise.all(
+            newReferenceData.map(async (person) => {
+                if (!person.avatar) {
+                    console.warn(`${person.first_name} uchun avatar yo'q`)
+                    return null
+                }
+                try {
+                    return await loadImageAndGetDescriptor(person.avatar, person.first_name)
+                } catch (err) {
+                    console.warn(`${person.first_name} uchun deskriptor olib bo'lmadi:`, err)
+                    return null
+                }
+            })
+        )
+
+        const validDescriptors = labeledDescriptors.filter(desc => desc !== null)
+        if (validDescriptors.length === 0) {
+            throw new Error('Hech qanday yaroqli deskriptor topilmadi')
+        }
+
+        faceMatcher = new faceapi.FaceMatcher(validDescriptors)
+        console.log('✅ Reference rasmlar muvaffaqiyatli yangilandi va FaceMatcher qayta yaratildi')
+
+        // Yangi ma'lumotlarni userDataMap ga saqlash
+        newReferenceData.forEach(user => {
+            userDataMap.set(user.first_name, user)
+        })
+
+    } catch (err) {
+        console.error('Reference ma\'lumotlarni yangilashda xatolik:', err)
+    }
 }
 
 async function startFaceRecognition() {
@@ -300,12 +393,9 @@ async function startFaceRecognition() {
                                 height: box.height
                             }
 
-                            // Yuz o'lchamini va joylashuvini tekshirish
-                            if (flippedBox.width < MIN_FACE_SIZE || flippedBox.height < MIN_FACE_SIZE || !isFullyInsideBox(flippedBox, detectionBox)) {
-                                const drawBox = new faceapi.draw.DrawBox(flippedBox, {
-                                    label: 'Yaqinroq keling',
-                                    boxColor: 'orange'
-                                })
+                            const positionMessage = getFacePositionMessage(flippedBox, detectionBox)
+                            if (positionMessage) {
+                                const drawBox = new faceapi.draw.DrawBox(flippedBox, { label: positionMessage, boxColor: 'orange' })
                                 drawBox.draw(canvas)
                                 continue
                             }
@@ -323,32 +413,30 @@ async function startFaceRecognition() {
                             if (faceDescriptors[match.label].length > DESCRIPTOR_HISTORY_LENGTH) {
                                 faceDescriptors[match.label].shift()
                             }
-                            const averageDescriptor = faceDescriptors[match.label].reduce((acc, curr) => acc.map((val, i) => val + curr[i]), new Array(128).fill(0))
-                                .map(val => val / faceDescriptors[match.label].length)
-
+                            const averageDescriptor = calculateAverageDescriptor(faceDescriptors[match.label])
                             const averageMatch = faceMatcher.findBestMatch(averageDescriptor)
 
-                            const isInDatabase = isUserInDatabase(match.label)
+                            const isInDatabase = isUserInDatabase(averageMatch.label)
 
                             if (averageMatch.distance <= MATCH_THRESHOLD && isInDatabase) {
-                                if (!consecutiveMatches[match.label]) {
-                                    consecutiveMatches[match.label] = 0
+                                if (!consecutiveMatches[averageMatch.label]) {
+                                    consecutiveMatches[averageMatch.label] = 0
                                 }
-                                if (!lastMatchTimes[match.label] || now - lastMatchTimes[match.label] >= MATCH_INTERVAL) {
-                                    consecutiveMatches[match.label]++
-                                    lastMatchTimes[match.label] = now
+                                if (!lastMatchTimes[averageMatch.label] || now - lastMatchTimes[averageMatch.label] >= MATCH_INTERVAL) {
+                                    consecutiveMatches[averageMatch.label]++
+                                    lastMatchTimes[averageMatch.label] = now
                                 }
 
-                                if (consecutiveMatches[match.label] >= CONSECUTIVE_MATCHES_REQUIRED) {
-                                    const userData = userDataMap.get(match.label)
+                                if (consecutiveMatches[averageMatch.label] >= CONSECUTIVE_MATCHES_REQUIRED) {
+                                    const userData = userDataMap.get(averageMatch.label)
                                     if (userData && userData.code) {
-                                        const lastPostTime = lastSuccessfulPostTimes[match.label] || 0
+                                        const lastPostTime = lastSuccessfulPostTimes[averageMatch.label] || 0
                                         if (now - lastPostTime >= POST_COOLDOWN) {
                                             const status = await postDetectedPerson(userData.code)
                                             console.log(status)
 
                                             if (status == 1) {
-                                                lastSuccessfulPostTimes[match.label] = now
+                                                lastSuccessfulPostTimes[averageMatch.label] = now
                                                 updateUI(1, `Xush keldingiz ${userData.last_name} ${userData.first_name}`)
                                             } else if (status == 2) {
                                                 updateUI(2, `Davomat olingan`)
@@ -358,32 +446,28 @@ async function startFaceRecognition() {
                                                 updateUI(4, `Mijoz yoq`)
                                             }
                                         }
-                                        consecutiveMatches[match.label] = 0
-                                        faceDescriptors[match.label] = []
+                                        consecutiveMatches[averageMatch.label] = 0
+                                        faceDescriptors[averageMatch.label] = []
                                     }
                                 }
                             } else {
-                                consecutiveMatches[match.label] = 0
+                                consecutiveMatches[averageMatch.label] = 0
                             }
 
                             const matchPercentage = (1 - averageMatch.distance) * 100
-                            const lastPostTime = lastSuccessfulPostTimes[match.label] || 0
+                            const lastPostTime = lastSuccessfulPostTimes[averageMatch.label] || 0
                             const timeSinceLastPost = now - lastPostTime
                             const canPostAgain = timeSinceLastPost >= POST_COOLDOWN
 
-                            let boxColor = 'green'
-                            if (isInDatabase) {
-                                if (matchPercentage >= 80) {
-                                    boxColor = canPostAgain ? 'green' : 'blue'
-                                }
-                            } else {
-                                boxColor = 'red'
+                            let boxColor = 'red'
+                            if (isInDatabase && averageMatch.distance <= MATCH_THRESHOLD) {
+                                boxColor = canPostAgain ? 'green' : 'blue'
                             }
 
                             const timeLeft = canPostAgain ? 0 : Math.ceil((POST_COOLDOWN - timeSinceLastPost) / 60000)
                             let label
                             if (isInDatabase) {
-                                label = `${match.label} (${matchPercentage.toFixed(0)}%)${!canPostAgain ? ` - ${timeLeft} daqiqa` : ''}`
+                                label = `${averageMatch.label} (${matchPercentage.toFixed(0)}%)${!canPostAgain ? ` - ${timeLeft} daqiqa` : ''}`
                             } else {
                                 label = 'Foydalanuvchi topilmadi'
                             }
@@ -394,6 +478,7 @@ async function startFaceRecognition() {
                     }
                     lastProcessedTime = now
                 }
+
                 requestAnimationFrame(loop)
             }
             loop()

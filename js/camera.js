@@ -16,7 +16,7 @@ async function loadModels() {
 
 async function fetchClientsData() {
     try {
-        const response = await fetch('http://192.168.0.108:8000/api/get-day-clients/')
+        const response = await fetch('https://alpomish-fitness.uz/api/get-day-clients/')
         clientsData = await response.json()
         console.log('Mijozlar ma\'lumotlari yuklandi:', clientsData)
     } catch (error) {
@@ -28,7 +28,7 @@ async function loadReferenceImages() {
     try {
         const labeledDescriptors = await Promise.all(clientsData.map(async client => {
             try {
-                const imgUrl = `http://192.168.0.108:8000${client.img}`
+                const imgUrl = `https://alpomish-fitness.uz${client.img}`
                 const img = await faceapi.fetchImage(imgUrl)
                 const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
                 if (detection) {
@@ -54,6 +54,19 @@ async function loadReferenceImages() {
         console.error('Reference rasmlarni yuklashda xato:', error)
     }
 }
+
+async function checkForNewUsers() {
+    try {
+        const newUserData = await fetchClientsData()
+        if (newUserData.length > 0) {
+            await loadReferenceImages()
+        }
+    } catch (err) {
+        console.error('Yangi foydalanuvchilarni tekshirishda xatolik:', err)
+    }
+}
+
+setInterval(checkForNewUsers, 3 * 60 * 1000)
 
 async function startVideo() {
     const video = document.getElementById('video')
@@ -173,7 +186,7 @@ async function sendToAPI() {
                 formData.append('img', blob, 'captured_image.jpg')
             }
 
-            const response = await fetch('http://192.168.0.108:8000/api/day-client-attendance/', {
+            const response = await fetch('https://alpomish-fitness.uz/api/day-client-attendance/', {
                 method: 'POST',
                 body: formData
             })
